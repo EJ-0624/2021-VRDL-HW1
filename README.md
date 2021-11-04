@@ -35,6 +35,12 @@ To evaluate my model, run:
 python inference.py --model-file Efficientnet_b4_weights.pth 
 ```
 
+## Weight for Training Model
+
+You can download the file here:
+
+- [The file of weight](https://drive.google.com/file/d/1gYVfYmBDfudLZ1zQC4fEsbXMn006kosy/view?usp=sharing)
+
 ## Results
 
 Our model achieves the following performance on :
