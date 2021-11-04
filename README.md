@@ -41,8 +41,15 @@ Our model achieves the following performance on :
 
 ### [Bird image Classification on EfficientNet-b4]
 
-| Model name         | Top 1 Accuracy  | Top 5 Accuracy |
-| ------------------ |---------------- | -------------- |
-| My awesome model   |     85%         |      95%       |
-
+| 5-fold CV  |  Accuracy  | 
+| -----------|----------- | 
+|fold 1      |   72.17%   |  
+| -----------|----------- | 
+|fold 2      |   74.66%   | 
+| -----------|----------- | 
+|fold 3      |   70.83%   |   
+| -----------|----------- | 
+|fold 4      |   73.33%   |  
+| -----------|----------- | 
+|fold 5      |   72.33%   | 
 
