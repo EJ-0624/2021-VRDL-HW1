@@ -32,7 +32,7 @@ python train.py --input-data <path_to_data>
 To evaluate my model, run:
 
 ```eval
-python inference.py --model-file weight.pth --benchmark imagenet
+python inference.py --model-file weight.pth 
 ```
 
 ## Results
