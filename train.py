@@ -1,32 +1,18 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# #  Bird image preprocessing
-
-# In[1]:
-
-
 import os
 root = "C:/Users/User/OneDrive/桌面/NYCU/hw1"
 os.chdir(root)
 
-
-
-# In[2]:
-
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt 
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 import time
-import copy
 import zipfile
 from PIL import Image
-
-
-# In[3]:
-
+from tqdm import trange
 
 import torch
 import torch.nn as nn
@@ -45,23 +31,8 @@ from torch.utils.data import Dataset, DataLoader
 from efficientnet_pytorch import EfficientNet
 import timm
 
-
-# In[4]:
-
-
 import warnings
 warnings.filterwarnings('ignore')
-
-
-# In[5]:
-
-
-import GPUtil
-GPUtil.showUtilization()
-
-
-# In[7]:
-
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -91,17 +62,10 @@ parser.add_argument("--weight_decay", type=float, default=1e-6)
 args = parser.parse_args(args=[])
 
 
-# In[8]:
-
-
 # device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")
-
-
-# In[9]:
-
 
 train_dir = "training_images.zip"
 test_dir  = "testing_images.zip"
@@ -140,11 +104,7 @@ valid_transform = transforms.Compose([transforms.Resize([224,224]),
 
 
 
-# # Read_data
-
-# In[10]:
-
-
+# Read_data
 class BirdDataSet(Dataset):
     # def __init__(self, data_dir, image_list_file, test = False, transform = None):
     def __init__(self, data_dir, dataframe, test = False, transform = None):
@@ -172,16 +132,13 @@ class BirdDataSet(Dataset):
             with zipfile.ZipFile(self.dir, "r") as z:
                 file_in_zip = z.namelist()
                 if img in file_in_zip:
-                    # print("Found image: ", img, " -- ")
                     filelikeobject = z.open(img, 'r')
                     image = Image.open(filelikeobject).convert('RGB')
-#                     plt.imshow(image)
                 else:
                     print("Not found " + img + "in " + self.dir)
                     
             if self.transform is not None:
                 image = self.transform(image)
-#                 image.show()
             return image, torch.tensor(target)
         
         else:
@@ -189,24 +146,19 @@ class BirdDataSet(Dataset):
             with zipfile.ZipFile(self.dir, "r") as z:
                 file_in_zip = z.namelist()
                 if img in file_in_zip:
-                    # print("Found image: ", img, " -- ")
                     filelikeobject = z.open(img, 'r')
                     image = Image.open(filelikeobject).convert('RGB')
-                    # plt.imshow(image)
                 else:
                     print("Not found " + img + "in " + self.dir)            
         
             if self.transform is not None:
                 image = self.transform(image)
-                # image.show()
             return image
     
     def __len__(self):
         return len(self.df)
 
-
-#%%
-
+     
 class ResNet50(nn.Module):
     """Model modified.
     The architecture of our model is the same as standard ResNet50
@@ -242,12 +194,6 @@ class ResNet50(nn.Module):
         # Unfreeze all layers
         for param in self.network.parameters():
             param.require_grad = True
-    # def forward(self, x):
-    #     x = self.DenseNet121(x)
-    #     return x
-
-
-# In[12]:
 
 
 class LabelSmoothLoss(nn.Module):
@@ -266,10 +212,6 @@ class LabelSmoothLoss(nn.Module):
         weight.scatter_(-1, target.unsqueeze(-1), (1. - self.smoothing))
         loss = (-weight * log_prob).sum(dim=-1).mean()
         return loss    
-
-
-# In[13]:
-
 
 def draw_chart(chart_data, Fold):
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
@@ -294,10 +236,7 @@ def draw_chart(chart_data, Fold):
     plt.suptitle('Fold :{}'.format(Fold))
     plt.tight_layout()
 
-
-
-#%%
-
+    
 def fit(model, dataloader, optimizer, criterion, scheduler, chart_data, acc_list, path_save, freeze = True):
     if freeze == True:
         epochs = args.epochs1
@@ -366,20 +305,13 @@ def fit(model, dataloader, optimizer, criterion, scheduler, chart_data, acc_list
                 print('Epoch [%d/%d]:%s Loss of the model:  %.4f %%' % (epoch+args.epochs1+1, total_epochs, phase, 100 * epoch_loss))
                 print('Epoch [%d/%d]:%s Accuracy of the model: %.4f %%' % (epoch+args.epochs1+1, total_epochs,phase, 100 * epoch_acc)) 
                 print('========================================================================')                
-                    
-        # if freeze == True:
-        #     torch.save({'model_state_dict':model.state_dict()}, 
-        #                os.path.join(path_save,str(epoch+1)+'_'+str(epoch_acc)+'.pth'))              
+                             
         if freeze == False:
             torch.save({'model_state_dict':model.state_dict()}, 
                        os.path.join(path_save,str(epoch+args.epochs1+1)+'_'+str(epoch_acc)+'.pth'))                   
     return chart_data, acc_list
-# # Training
-
-# In[14]:
-
-
-from tqdm import trange
+  
+# Training
 def training():
     since = time.time()  
     df = pd.read_table(train_image_file, sep = "\s", header=None, 
@@ -412,17 +344,7 @@ def training():
         if torch.cuda.device_count() > 1:
             model = nn.DataParallel(model, device_ids=[0,1,2,3])
         criterion = nn.CrossEntropyLoss()
-#         criterion = LabelSmoothLoss(args.label_smoothing).to(device)
-#         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=4e-6)
-    
-#         scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3, verbose=True)
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-        # optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-5)
-        # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.8685)
-        # scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
-        # scheduler = lr_scheduler.OneCycleLR(optimizer, args.lr, epochs = args.epochs, 
-        #                                         steps_per_epoch=len(dataloader['train']))
-        
         
         acc_list = []        
         print('******************************model freeze******************************')
@@ -449,15 +371,6 @@ def training():
         print('Best val Acc for epoch {}: {:.4f}%'.format(np.argmax(acc_list)+1, max(acc_list) * 100))
         draw_chart(chart_data, fold)
          
-        # # Saving the model
-        # torch.save({'model_state_dict':model.state_dict()}, 
-        #             os.path.join(path_save,'Last_epoch'+str(epoch_acc)+'.pth'))
-    # return np.argmax(acc_list), max(acc_list)
-
-
-# In[15]:
-
-
 def testing():   
     test = pd.read_table(test_image_file, sep = "\s", header=None, 
                          names = ["Images"])
@@ -496,10 +409,6 @@ def testing():
         submission.append([img, predicted_class])
     txt_name = 'answer-resbet50-fold-1-31_0.72.txt'
     np.savetxt(txt_name, submission, fmt='%s')
-#         np.savetxt('answer.txt', submission, fmt='%s')
-
-
-# In[ ]:
 
 
 if __name__ == "__main__":
@@ -508,10 +417,5 @@ if __name__ == "__main__":
     else:
         training()
     torch.cuda.empty_cache()
-
-
-# In[ ]:
-
-
 
 
