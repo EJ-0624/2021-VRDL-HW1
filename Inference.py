@@ -136,7 +136,7 @@ def testing():
                              num_workers=args.num_workers, shuffle=False)
 
     model = Efficientnet(args.n_classes).to(device)
-    path = "EfficientNet_weights_b4.pth"
+    path = "EfficientNet_b4_weights.pth"
     resume_file = torch.load(path, map_location = "cuda:0")
     model.load_state_dict(resume_file['model_state_dict'], False)
     model.eval()
