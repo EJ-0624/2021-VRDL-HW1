@@ -3,7 +3,7 @@
 
 ## Environment
 
-* Ubuntu 18.04.5 LTS (GNU/Linux 4.15.0-39-generic x86_64)
+* Ubuntu 18.04.5 LTS
 
 ## Requirements
 
