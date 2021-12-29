@@ -4,8 +4,10 @@
 ## Environment
 
 * Ubuntu 18.04.5 LTS
-### lsb_release -a   
-### cat /etc/lsb-release
+```setup
+lsb_release -a   
+cat /etc/lsb-release
+```
 
 ## Requirements
 
